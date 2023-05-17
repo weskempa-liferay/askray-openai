@@ -1,3 +1,8 @@
 
 askray/.DS_Store
 public/.DS_Store
+.env
+.**
+node_modules/*
+package-lock.json
+.DS_Store

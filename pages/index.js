@@ -2,12 +2,25 @@ import Head from "next/head";
 import { useState } from "react";
 import styles from "./index.module.css";
 
+import LiferayApi from './api/liferayapi';
+
 export default function Home() {
   const [questionInput, setQuestionInput] = useState("");
   const [result, setResult] = useState();
 
   async function onSubmit(event) {
     event.preventDefault();
+
+    if(questionInput.toLowerCase().startsWith("write")){
+      console.log("Break for write logic");
+
+      setResult("Let me help you with that. One Moment...");
+
+      authorContent(questionInput);
+
+      return false;
+    }
+
     try {
       const response = await fetch("/api/generate", {
         method: "POST",
@@ -31,10 +44,45 @@ export default function Home() {
     }
   }
 
+  async function authorContent(topicString){
+      console.log("Input string is " + topicString);
+
+        const response = await fetch("/api/generate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ question: questionInput }),
+        });
+
+        const data = await response.json();
+        if (response.status !== 200) {
+            throw data.error || new Error(`Request failed with status ${response.status}`);
+        }
+
+
+        LiferayApi("/o/headless-delivery/v1.0/sites/20119/blog-postings", {
+            method: 'POST', 
+            body: {
+                "articleBody": data.result,
+                "description": data.result.substring(0, 150) + "...",
+                "headline": topicString.replace("write a blog post on the topic of",""),
+                "viewableBy": "Anyone"
+            }
+        })
+        .then((result) => {
+            console.log("Posted Load Request");
+            console.log(result.data);
+            setResult("All set! Your blog post has been created.");
+        })
+        .catch(console.log)
+  
+  }
+
   return (
     <div>
       <Head>
-        <title>OpenAI Quickstart</title>
+        <title>OpenAI Integration</title>
         <link rel="icon" href="/askray.png" />
       </Head>
 
